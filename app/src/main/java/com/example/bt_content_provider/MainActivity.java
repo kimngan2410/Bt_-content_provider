@@ -5,61 +5,75 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
-import android.widget.TextView;
+import android.provider.CallLog;
+import android.provider.ContactsContract;
+import android.provider.Telephony;
 import android.widget.Toast;
 
-import androidx.activity.EdgeToEdge;
+import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
-import androidx.core.graphics.Insets;
-import androidx.core.view.ViewCompat;
-import androidx.core.view.WindowInsetsCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentPagerAdapter;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.viewpager.widget.ViewPager;
+
+import com.example.bt_content_provider.R;
+import com.google.android.material.tabs.TabLayout;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-
-    private static final int PERMISSION_REQUEST_CODE = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
 
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_SMS) != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.READ_SMS}, PERMISSION_REQUEST_CODE);
-        } else {
-            readMessages();
-        }
+        ViewPager viewPager = findViewById(R.id.viewPager);
+        TabLayout tabLayout = findViewById(R.id.tabLayout);
 
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == PERMISSION_REQUEST_CODE && grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-            readMessages();
-        } else {
-            Toast.makeText(this, "Permission denied to read SMS", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void readMessages() {
-        Uri uri = Uri.parse("content://sms/inbox");
-        Cursor cursor = getContentResolver().query(uri, null, null, null, null);
-
-        if (cursor != null) {
-            StringBuilder smsBuilder = new StringBuilder();
-            while (cursor.moveToNext()) {
-                String body = cursor.getString(cursor.getColumnIndexOrThrow("body"));
-                String address = cursor.getString(cursor.getColumnIndexOrThrow("address"));
-                smsBuilder.append("From: ").append(address).append("\nMessage: ").append(body).append("\n\n");
+        viewPager.setAdapter(new FragmentPagerAdapter(getSupportFragmentManager()) {
+            @NonNull
+            @Override
+            public Fragment getItem(int position) {
+                switch (position) {
+                    case 0:
+                        return new MessageListFragment();
+                    case 1:
+                        return new CallLogFragment();
+                    case 2:
+                        return new ContactFragment();
+                    default:
+                        return new MessageListFragment();
+                }
             }
-            cursor.close();
 
-            TextView smsTextView = findViewById(R.id.smsTextView); // Add a TextView in activity_main.xml to show messages
-            smsTextView.setText(smsBuilder.toString());
-        }
+            @Override
+            public int getCount() {
+                return 3;
+            }
+
+            @Nullable
+            @Override
+            public CharSequence getPageTitle(int position) {
+                switch (position) {
+                    case 0:
+                        return "Tin nhắn";
+                    case 1:
+                        return "Nhật ký";
+                    case 2:
+                        return "Danh bạ";
+                    default:
+                        return null;
+                }
+            }
+        });
+
+        tabLayout.setupWithViewPager(viewPager);
     }
-
 }
